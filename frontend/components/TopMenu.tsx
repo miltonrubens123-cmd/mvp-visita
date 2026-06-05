@@ -12,7 +12,7 @@ export default function TopMenu() {
         >
 
           <Image
-            src="/logo.png"
+            src="/Logo.png"
             alt="Business Vision"
             width={40}
             height={40}
