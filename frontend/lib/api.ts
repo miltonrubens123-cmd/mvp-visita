@@ -35,7 +35,10 @@ export async function getMapaVisitas(dataFiltro?: string, vendedor?: string) {
   const { data } = await api.get("/mapa-visitas", {
     params: {
       data: dataFiltro,
-      vendedor: vendedor && vendedor !== "Todos" ? vendedor : undefined,
+      vendedor:
+        vendedor && vendedor !== "Todos" && vendedor !== "TODOS"
+          ? vendedor
+          : undefined,
     },
   });
   return data;
