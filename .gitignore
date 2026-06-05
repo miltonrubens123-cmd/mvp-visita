@@ -1,16 +1,22 @@
 .venv/
 venv/
+**/venv/
+**/.venv/
 
 __pycache__/
 *.pyc
 
 .env
 .env.local
+backend/.env
+frontend/.env
+frontend/.env.local
 
 node_modules/
+frontend/node_modules/
 .next/
+frontend/.next/
 
 dist/
 build/
-
 *.log
