@@ -42,6 +42,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://mvp-visita-web.onrender.com",
         "https://mvp-visita-one.vercel.app",
+        "https://mvp.mbusinessvision.com.br",
     ],
     allow_credentials=True,
     allow_methods=["*"],
