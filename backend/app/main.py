@@ -5,13 +5,13 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 
-
 class PastaVisitaIn(BaseModel):
     nome: str
     dia_semana: int
     frequencia: str
     data_inicio: str
     ativo: bool = True
+
 
 class PastaVisitaUpdate(BaseModel):
     nome: str
@@ -30,10 +30,8 @@ class ProgramacaoClienteIn(BaseModel):
     ordem_rota: int | None = None
     ativo: bool = True
 
-app = FastAPI(
-    title="Monitoramento de Visitas",
-    version="1.0.0"
-)
+
+app = FastAPI(title="Monitoramento de Visitas", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,6 +40,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://mvp-visita-web.onrender.com",
         "https://mvp-visita-one.vercel.app",
+        "https://mvp-visita-ffbyvlo0v-miltonrubens123-cmds-projects.vercel.app",
         "https://mvp.mbusinessvision.com.br",
     ],
     allow_credentials=True,
@@ -52,14 +51,13 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {
-        "status": "online",
-        "sistema": "Monitoramento de Visitas"
-    }
+    return {"status": "online", "sistema": "Monitoramento de Visitas"}
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @app.get("/vendedores")
 def listar_vendedores():
@@ -78,13 +76,14 @@ def listar_vendedores():
                 "codigo_erp": row.codigo_erp,
                 "nome": row.nome,
                 "supervisor": row.supervisor,
-                "ativo": row.ativo
+                "ativo": row.ativo,
             }
             for row in resultado
         ]
 
     finally:
         db.close()
+
 
 @app.get("/clientes")
 def listar_clientes():
@@ -108,13 +107,14 @@ def listar_clientes():
                 "codigo_erp": row.codigo_erp,
                 "razao_social": row.razao_social,
                 "cidade": row.cidade,
-                "uf": row.uf
+                "uf": row.uf,
             }
             for row in resultado
         ]
 
     finally:
         db.close()
+
 
 @app.get("/dashboard")
 def dashboard(data: str | None = None):
@@ -137,6 +137,7 @@ def dashboard(data: str | None = None):
 
     finally:
         db.close()
+
 
 @app.get("/visitas")
 def listar_visitas():
@@ -185,16 +186,18 @@ def ranking_vendedores():
     finally:
         db.close()
 
+
 @app.get("/analitico-kpis")
 def analitico_kpis(
     data_inicial: str | None = None,
     data_final: str | None = None,
-    vendedor: str | None = None
+    vendedor: str | None = None,
 ):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 COUNT(*) AS total_visitas,
                 COUNT(DISTINCT id_cliente_erp) AS clientes_visitados,
@@ -209,11 +212,13 @@ def analitico_kpis(
             WHERE (:data_inicial IS NULL OR data_visita >= CAST(:data_inicial AS DATE))
               AND (:data_final IS NULL OR data_visita <= CAST(:data_final AS DATE))
               AND (:vendedor IS NULL OR vendedor_nome = :vendedor)
-        """), {
-            "data_inicial": data_inicial,
-            "data_final": data_final,
-            "vendedor": vendedor,
-        })
+        """),
+            {
+                "data_inicial": data_inicial,
+                "data_final": data_final,
+                "vendedor": vendedor,
+            },
+        )
 
         return dict(resultado.mappings().first())
 
@@ -225,12 +230,13 @@ def analitico_kpis(
 def analitico_visitas_dia(
     data_inicial: str | None = None,
     data_final: str | None = None,
-    vendedor: str | None = None
+    vendedor: str | None = None,
 ):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 data_visita,
                 COUNT(*) AS total_visitas,
@@ -241,11 +247,13 @@ def analitico_visitas_dia(
               AND (:vendedor IS NULL OR vendedor_nome = :vendedor)
             GROUP BY data_visita
             ORDER BY data_visita
-        """), {
-            "data_inicial": data_inicial,
-            "data_final": data_final,
-            "vendedor": vendedor,
-        })
+        """),
+            {
+                "data_inicial": data_inicial,
+                "data_final": data_final,
+                "vendedor": vendedor,
+            },
+        )
 
         return [dict(row._mapping) for row in resultado]
 
@@ -257,12 +265,13 @@ def analitico_visitas_dia(
 def analitico_tipos_visita(
     data_inicial: str | None = None,
     data_final: str | None = None,
-    vendedor: str | None = None
+    vendedor: str | None = None,
 ):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 COALESCE(tipo_visita, 'Sem tipo') AS tipo_visita,
                 COUNT(*) AS total
@@ -272,11 +281,13 @@ def analitico_tipos_visita(
               AND (:vendedor IS NULL OR vendedor_nome = :vendedor)
             GROUP BY COALESCE(tipo_visita, 'Sem tipo')
             ORDER BY total DESC
-        """), {
-            "data_inicial": data_inicial,
-            "data_final": data_final,
-            "vendedor": vendedor,
-        })
+        """),
+            {
+                "data_inicial": data_inicial,
+                "data_final": data_final,
+                "vendedor": vendedor,
+            },
+        )
 
         return [dict(row._mapping) for row in resultado]
 
@@ -288,12 +299,13 @@ def analitico_tipos_visita(
 def analitico_tabela(
     data_inicial: str | None = None,
     data_final: str | None = None,
-    vendedor: str | None = None
+    vendedor: str | None = None,
 ):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 id_visita_erp,
                 data_hora_visita,
@@ -315,26 +327,27 @@ def analitico_tabela(
               AND (:vendedor IS NULL OR vendedor_nome = :vendedor)
             ORDER BY data_hora_visita DESC
             LIMIT 1000
-        """), {
-            "data_inicial": data_inicial,
-            "data_final": data_final,
-            "vendedor": vendedor,
-        })
+        """),
+            {
+                "data_inicial": data_inicial,
+                "data_final": data_final,
+                "vendedor": vendedor,
+            },
+        )
 
         return [dict(row._mapping) for row in resultado]
 
     finally:
         db.close()
 
+
 @app.get("/ranking-comercial")
-def ranking_comercial(
-    data_inicial: str | None = None,
-    data_final: str | None = None
-):
+def ranking_comercial(data_inicial: str | None = None, data_final: str | None = None):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 id_vendedor_erp,
                 vendedor_nome,
@@ -352,15 +365,18 @@ def ranking_comercial(
               AND (:data_final IS NULL OR data_visita <= CAST(:data_final AS DATE))
             GROUP BY id_vendedor_erp, vendedor_nome
             ORDER BY total_visitas DESC, vendas_efetivadas DESC
-        """), {
-            "data_inicial": data_inicial,
-            "data_final": data_final,
-        })
+        """),
+            {
+                "data_inicial": data_inicial,
+                "data_final": data_final,
+            },
+        )
 
         return [dict(row._mapping) for row in resultado]
 
     finally:
         db.close()
+
 
 @app.get("/tipos-visita")
 def tipos_visita():
@@ -387,7 +403,8 @@ def mapa_visitas(data: str | None = None, vendedor: str | None = None):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 id_visita_erp,
                 data_hora_visita,
@@ -415,15 +432,15 @@ def mapa_visitas(data: str | None = None, vendedor: str | None = None):
                     OR CAST(id_vendedor_erp AS TEXT) = :vendedor
               )
             ORDER BY data_hora_visita, id_visita_erp
-        """), {
-            "data": data,
-            "vendedor": vendedor
-        })
+        """),
+            {"data": data, "vendedor": vendedor},
+        )
 
         return [dict(row._mapping) for row in resultado]
 
     finally:
         db.close()
+
 
 @app.get("/status-carga")
 def status_carga():
@@ -446,15 +463,13 @@ def status_carga():
         row = resultado.mappings().first()
 
         if not row:
-            return {
-                "status": "SEM_EXECUCAO",
-                "mensagem": "Nenhuma carga registrada."
-            }
+            return {"status": "SEM_EXECUCAO", "mensagem": "Nenhuma carga registrada."}
 
         return dict(row)
 
     finally:
         db.close()
+
 
 @app.get("/datas-visitas")
 def datas_visitas():
@@ -467,41 +482,41 @@ def datas_visitas():
             ORDER BY data_visita DESC
         """))
 
-        return [
-            {"data": str(row.data_visita)}
-            for row in resultado
-        ]
+        return [{"data": str(row.data_visita)} for row in resultado]
 
     finally:
         db.close()
+
 
 @app.get("/vendedores-visitas")
 def vendedores_visitas(data: str | None = None):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT DISTINCT vendedor_nome
             FROM vw_visitas
             WHERE (:data IS NULL OR data_visita = CAST(:data AS DATE))
               AND vendedor_nome IS NOT NULL
             ORDER BY vendedor_nome
-        """), {"data": data})
+        """),
+            {"data": data},
+        )
 
-        return [
-            {"vendedor_nome": row.vendedor_nome}
-            for row in resultado
-        ]
+        return [{"vendedor_nome": row.vendedor_nome} for row in resultado]
 
     finally:
         db.close()
+
 
 @app.get("/ranking")
 def ranking(data: str | None = None):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 vendedor_nome,
                 COUNT(*) AS total_visitas
@@ -509,19 +524,23 @@ def ranking(data: str | None = None):
             WHERE (:data IS NULL OR data_visita = CAST(:data AS DATE))
             GROUP BY vendedor_nome
             ORDER BY total_visitas DESC
-        """), {"data": data})
+        """),
+            {"data": data},
+        )
 
         return [dict(row._mapping) for row in resultado]
 
     finally:
         db.close()
 
+
 @app.get("/ultimas-visitas")
 def ultimas_visitas(data: str | None = None):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             SELECT
                 data_hora_visita,
                 vendedor_nome,
@@ -531,12 +550,15 @@ def ultimas_visitas(data: str | None = None):
             WHERE (:data IS NULL OR data_visita = CAST(:data AS DATE))
             ORDER BY data_hora_visita DESC
             LIMIT 20
-        """), {"data": data})
+        """),
+            {"data": data},
+        )
 
         return [dict(row._mapping) for row in resultado]
 
     finally:
         db.close()
+
 
 @app.get("/pastas-visita")
 def listar_pastas_visita():
@@ -566,7 +588,8 @@ def criar_pasta_visita(dados: PastaVisitaIn):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             INSERT INTO pasta_visita (
                 nome,
                 dia_semana,
@@ -582,15 +605,14 @@ def criar_pasta_visita(dados: PastaVisitaIn):
                 :ativo
             )
             RETURNING id
-        """), dados.model_dump())
+        """),
+            dados.model_dump(),
+        )
 
         novo_id = resultado.scalar()
         db.commit()
 
-        return {
-            "status": "ok",
-            "id": novo_id
-        }
+        return {"status": "ok", "id": novo_id}
 
     finally:
         db.close()
@@ -629,7 +651,8 @@ def criar_programacao_cliente(dados: ProgramacaoClienteIn):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             INSERT INTO programacao_cliente (
                 pasta_id,
                 cliente_id_erp,
@@ -649,24 +672,26 @@ def criar_programacao_cliente(dados: ProgramacaoClienteIn):
                 :ativo
             )
             RETURNING id
-        """), dados.model_dump())
+        """),
+            dados.model_dump(),
+        )
 
         novo_id = resultado.scalar()
         db.commit()
 
-        return {
-            "status": "ok",
-            "id": novo_id
-        }
+        return {"status": "ok", "id": novo_id}
 
     finally:
         db.close()
+
+
 @app.get("/planejado-realizado")
 def planejado_realizado(data: str):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             WITH planejado AS (
                 SELECT
                     pc.vendedor_id_erp,
@@ -782,18 +807,23 @@ def planejado_realizado(data: str):
             ORDER BY
                 percentual DESC NULLS LAST,
                 vb.vendedor_nome
-        """), {"data": data})
+        """),
+            {"data": data},
+        )
 
         return [dict(row._mapping) for row in resultado]
 
     finally:
         db.close()
+
+
 @app.put("/pastas-visita/{pasta_id}")
 def atualizar_pasta_visita(pasta_id: int, dados: PastaVisitaUpdate):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             UPDATE pasta_visita
             SET
                 nome = :nome,
@@ -803,48 +833,43 @@ def atualizar_pasta_visita(pasta_id: int, dados: PastaVisitaUpdate):
                 ativo = :ativo
             WHERE id = :pasta_id
             RETURNING id
-        """), {
-            "pasta_id": pasta_id,
-            "nome": dados.nome,
-            "dia_semana": dados.dia_semana,
-            "frequencia": dados.frequencia,
-            "data_inicio": dados.data_inicio,
-            "ativo": dados.ativo,
-        })
+        """),
+            {
+                "pasta_id": pasta_id,
+                "nome": dados.nome,
+                "dia_semana": dados.dia_semana,
+                "frequencia": dados.frequencia,
+                "data_inicio": dados.data_inicio,
+                "ativo": dados.ativo,
+            },
+        )
 
         atualizado_id = resultado.scalar()
 
         if atualizado_id is None:
             db.rollback()
-            return {
-                "status": "erro",
-                "mensagem": "Pasta não encontrada."
-            }
+            return {"status": "erro", "mensagem": "Pasta não encontrada."}
 
         db.commit()
 
-        return {
-            "status": "ok",
-            "id": atualizado_id
-        }
+        return {"status": "ok", "id": atualizado_id}
 
     except Exception as e:
         db.rollback()
         print("ERRO AO ATUALIZAR PASTA:", str(e))
-        return {
-            "status": "erro",
-            "mensagem": str(e)
-        }
+        return {"status": "erro", "mensagem": str(e)}
 
     finally:
         db.close()
+
 
 @app.get("/planejado-realizado-detalhe")
 def planejado_realizado_detalhe(data: str):
     db = SessionLocal()
 
     try:
-        resultado = db.execute(text("""
+        resultado = db.execute(
+            text("""
             WITH planejado AS (
                 SELECT
                     pc.vendedor_id_erp,
@@ -939,7 +964,9 @@ def planejado_realizado_detalhe(data: str):
                 vendedor_nome,
                 ordem_rota,
                 cliente_nome
-        """), {"data": data})
+        """),
+            {"data": data},
+        )
 
         linhas = [dict(row._mapping) for row in resultado]
 
@@ -952,27 +979,22 @@ def planejado_realizado_detalhe(data: str):
                 agrupado[vendedor] = {
                     "vendedor_id_erp": linha["vendedor_id_erp"],
                     "vendedor_nome": vendedor,
-                    "clientes": []
+                    "clientes": [],
                 }
 
-            agrupado[vendedor]["clientes"].append({
-                "cliente_id_erp": linha["cliente_id_erp"],
-                "cliente_nome": linha["cliente_nome"],
-                "pasta_nome": linha["pasta_nome"],
-                "ordem_rota": linha["ordem_rota"],
-                "status": linha["status"],
-                "id_visita_erp": linha["id_visita_erp"],
-                "tipo_visita": linha["tipo_visita"],
-            })
+            agrupado[vendedor]["clientes"].append(
+                {
+                    "cliente_id_erp": linha["cliente_id_erp"],
+                    "cliente_nome": linha["cliente_nome"],
+                    "pasta_nome": linha["pasta_nome"],
+                    "ordem_rota": linha["ordem_rota"],
+                    "status": linha["status"],
+                    "id_visita_erp": linha["id_visita_erp"],
+                    "tipo_visita": linha["tipo_visita"],
+                }
+            )
 
         return list(agrupado.values())
-    
-    
-    
-
-    
 
     finally:
         db.close()
-
-        
