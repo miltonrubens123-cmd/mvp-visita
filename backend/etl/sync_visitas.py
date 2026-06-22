@@ -1,5 +1,8 @@
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+tz = ZoneInfo("America/Sao_Paulo")
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -157,7 +160,7 @@ def upsert_visitas_neon(df: pd.DataFrame):
                         tipo_visita = EXCLUDED.tipo_visita,
                         vendedor_id_erp = EXCLUDED.vendedor_id_erp,
                         vendedor_nome = EXCLUDED.vendedor_nome,
-                        atualizado_em = NOW()
+                        atualizado_em = NOW() AT TIME ZONE 'America/Sao_Paulo'
                 """),
                 row.to_dict(),
             )
@@ -167,7 +170,7 @@ def upsert_visitas_neon(df: pd.DataFrame):
 
 
 def main():
-    inicio = datetime.now()
+    inicio = datetime.now(tz)
     registros = 0
 
     try:
@@ -182,7 +185,7 @@ def main():
         print("Enviando para Neon...")
         registros = upsert_visitas_neon(df)
 
-        fim = datetime.now()
+        fim = datetime.now(tz)
 
         registrar_carga(
             inicio=inicio,
@@ -195,7 +198,7 @@ def main():
         print("Finalizado.")
 
     except Exception as e:
-        fim = datetime.now()
+        fim = datetime.now(tz)
 
         try:
             registrar_carga(
