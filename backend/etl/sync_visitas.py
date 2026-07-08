@@ -1,13 +1,14 @@
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
-tz = ZoneInfo("America/Sao_Paulo")
+from urllib.parse import quote_plus
 
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from urllib.parse import quote_plus
+
+
+TZ_BRASILIA = ZoneInfo("America/Sao_Paulo")
 
 load_dotenv()
 
@@ -42,7 +43,7 @@ def testar_conexao_erp():
         print("ERP conectado:", resultado.scalar())
 
 
-def registrar_carga(inicio, fim, registros, status, mensagem):
+def registrar_carga(registros, status, mensagem):
     with engine_neon.begin() as conn:
         conn.execute(
             text("""
@@ -54,16 +55,14 @@ def registrar_carga(inicio, fim, registros, status, mensagem):
                     mensagem
                 )
                 VALUES (
-                    :inicio_execucao,
-                    :fim_execucao,
+                    NOW() AT TIME ZONE 'America/Sao_Paulo',
+                    NOW() AT TIME ZONE 'America/Sao_Paulo',
                     :registros_processados,
                     :status,
                     :mensagem
                 )
             """),
             {
-                "inicio_execucao": inicio,
-                "fim_execucao": fim,
                 "registros_processados": registros,
                 "status": status,
                 "mensagem": mensagem,
@@ -144,7 +143,7 @@ def upsert_visitas_neon(df: pd.DataFrame):
                         :tipo_visita,
                         :vendedor_id_erp,
                         :vendedor_nome,
-                        NOW()
+                        NOW() AT TIME ZONE 'America/Sao_Paulo'
                     )
                     ON CONFLICT (id_visita_erp)
                     DO UPDATE SET
@@ -170,10 +169,11 @@ def upsert_visitas_neon(df: pd.DataFrame):
 
 
 def main():
-    inicio = datetime.now(tz)
     registros = 0
 
     try:
+        print("Início da execução:", datetime.now(TZ_BRASILIA))
+
         print("Testando conexão com ERP...")
         testar_conexao_erp()
 
@@ -185,25 +185,18 @@ def main():
         print("Enviando para Neon...")
         registros = upsert_visitas_neon(df)
 
-        fim = datetime.now(tz)
-
         registrar_carga(
-            inicio=inicio,
-            fim=fim,
             registros=registros,
             status="SUCESSO",
             mensagem="Carga concluída com sucesso.",
         )
 
+        print("Fim da execução:", datetime.now(TZ_BRASILIA))
         print("Finalizado.")
 
     except Exception as e:
-        fim = datetime.now(tz)
-
         try:
             registrar_carga(
-                inicio=inicio,
-                fim=fim,
                 registros=registros,
                 status="ERRO",
                 mensagem=str(e),
